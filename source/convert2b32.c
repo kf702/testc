@@ -59,6 +59,7 @@ struct sort_t {
 struct sort_t * shift_sort_arr = NULL;
 int shift_sort_arr_cnt = 0;
 struct one_data * shift_data = NULL;
+struct shift_32_data * shift_data32 = NULL;
 int shift_data_len = 0;
 
 char out_prefix1[512];
@@ -293,7 +294,7 @@ int parse_shift_line_32(char* line, int last_got) {
       if (sec > filter_end_s) return 1;
 
       int index = sec - filter_start_s;
-      one32 = shift_data + index;
+      one32 = shift_data32 + index;
       if (one32->sec > 0 && last_got > 100) return 0;
       one32->sec = sec;
 
@@ -302,7 +303,7 @@ int parse_shift_line_32(char* line, int last_got) {
         return 0;
       }
 
-      one = one32.buf[one32->data_len];
+      one = one32->buf + one32->data_len;
       one->time = ms;
       one->flag = "00";
       
@@ -429,9 +430,11 @@ int load_one_shift_file(char* filename, int last_got) {
   size_t len = 0;
   int got = 0;
   int nread;
+  int rr = 0;
   while ((nread = getline(&line, &len, fp)) != -1) {
     if (line[0] == '#') continue;
-    int rr = parse_shift_line(line, last_got);
+    if (proccess_hz == 1) rr = parse_shift_line(line, last_got);
+    if (proccess_hz == 32) rr = parse_shift_line_32(line, last_got);
     if (rr == 1) break;
     if (rr == 0) got++;
   }
@@ -467,11 +470,11 @@ int load_shift_data() {
   }
   */
   if (start_i == -1) {
-    printf ("convert2b.so: config data lack seconds\n");
+    if(proccess_hz == 1) printf ("convert2b.so: config data lack seconds\n");
     start_i = 0;
   }
   if (end_i == -1) {
-    printf ("convert2b.so: config data lack seconds\n");
+    if(proccess_hz == 1) printf ("convert2b.so: config data lack seconds\n");
     end_i = shift_sort_arr_cnt - 1;
   }
 
@@ -481,9 +484,9 @@ int load_shift_data() {
     memset(shift_data, 0, sizeof(struct one_data) * size);
   }
   if (proccess_hz == 32) {
-    shift_data = malloc(sizeof(struct shift_32_data) * size);
-    if (shift_data == NULL) return 4;
-    memset(shift_data, 0, sizeof(struct shift_32_data) * size);
+    shift_data32 = malloc(sizeof(struct shift_32_data) * size);
+    if (shift_data32 == NULL) return 4;
+    memset(shift_data32, 0, sizeof(struct shift_32_data) * size);
   } 
   
   int last_got = 0;
@@ -599,7 +602,7 @@ uint64_t read_last_time_shift(char *filename) {
   FILE *fp = fopen(filename, "rb");
   if (fp == NULL) return 0;
   const int max_len = 150;
-  const int max_len32 = 75;
+  const int max_len32 = 90;
   char buf[256] = {0};
   int len = 0;
   if (proccess_hz == 1) {
@@ -703,14 +706,15 @@ void gen_out_prefix(char* line) {
 }
 
 double round_wrap(double d) {
-    return round(d*1000)/1000.0;
+  if (proccess_hz == 32) return round(d*10000)/10000.0;
+  return round(d*1000)/1000.0;
     /*
     if (d == 0) return 0;
     if (d > 0) return ((int)(d * 1000 + 0.5)) / 1000.0;
     else {
-        double c = ((int)(d * 1000 - 0.5)) / 1000.0;
-	if (c == 0) return 0;
-	return c;
+      double c = ((int)(d * 1000 - 0.5)) / 1000.0;
+      if (c == 0) return 0;
+      return c;
     }
     */
 }
@@ -745,7 +749,7 @@ void write_line(FILE* fp, struct one_data * one) {
 void write_line_noby(FILE* fp, struct one_data * one) {
   char buf[128] = {0};
 #ifdef SUB14
-  one->time = one->time - 14 * 1000000;
+  if (proccess_hz == 1) one->time = one->time - 14 * 1000000;
 #endif
   ms_to_string(one->time, buf);
   if (0 == strncmp(one->flag, "11", 2)) return ;
@@ -768,7 +772,7 @@ void write_line_noby(FILE* fp, struct one_data * one) {
 void write_line_nan(FILE* fp, uint64_t ms) {
   char buf[128] = {0};
 #ifdef SUB14
-  ms = ms - 14 * 1000000;
+  if (proccess_hz == 1) ms = ms - 14 * 1000000;
 #endif
   ms_to_string(ms, buf);
   if (proccess_hz == 1) fprintf(fp, "%s NaN NaN NaN 15\n", buf);
@@ -916,16 +920,16 @@ void by_config(struct more_data * first) {
   }
 }
 
-struct shift_one_data * find_shift_one(struct shift_32_data * shift_one32, ms) {
+struct shift_one_data * find_shift_one(struct shift_32_data * shift_one32, uint64_t ms) {
   int i = 0;
   for(i = 0; i < shift_one32->data_len; i++) {
-    if (shift_one32->buf[i].time == ms) return (shift_one32->buf[i]);
+    if (shift_one32->buf[i].time == ms) return (shift_one32->buf + i);
   }
-  return null;
+  return NULL;
 }
 
 void by_config_32(struct more_data * first) {
-  if (shift_data == NULL) return;
+  if (shift_data32 == NULL) return;
   struct more_data * next = first;
   struct shift_32_data * shift_one32 = NULL;
   struct shift_one_data * shift_one = NULL;
@@ -941,7 +945,7 @@ void by_config_32(struct more_data * first) {
       uint64_t sec = one->time / 1000000;
       int index = sec - filter_start_s;
       if (index >= 0 && index < shift_data_len) {
-        shift_one32 = shift_data + index;
+        shift_one32 = shift_data32 + index;
         if (shift_one32->sec == sec) {
           shift_one = find_shift_one(shift_one32, one->time);
           if (shift_one) {
@@ -1123,7 +1127,7 @@ int save_file_32(struct more_data * first, char* output_dir, char* fix_filename)
       if (start_t == 0) start_t = now_t;
       int64_t delta = now_t - last_t;
       if (delta > 10 * 1000000) {
-	      print_32_area(start_t, last_t);
+	      if (start_t < last_t) print_32_area(start_t, last_t);
 	      start_t = now_t;
       }
 
@@ -1146,8 +1150,8 @@ int convert_one_32(char** files, int files_cnt, char* output_dir, char* fix_file
 
   struct more_data * all = load_files(files, files_cnt);
 
-  int size = filter_end_s - filter_start_s + 1;
-  printf ("convert2b.so: %lu ~ %lu, size: %d second\n", filter_start_s,filter_end_s, size);
+  uint32_t size = filter_end_s - filter_start_s + 1;
+  printf ("convert2b.so: %llu ~ %llu, size: %lu second\n", filter_start_s,filter_end_s, size);
 
   int serr = load_shift_data();
   if (serr != 0) return serr;
@@ -1158,9 +1162,9 @@ int convert_one_32(char** files, int files_cnt, char* output_dir, char* fix_file
 
   free_all(all);
 
-  if (shift_data) {
-    free(shift_data);
-    shift_data = NULL;
+  if (shift_data32) {
+    free(shift_data32);
+    shift_data32 = NULL;
     shift_data_len = 0;
   }
 
@@ -1174,8 +1178,8 @@ int convert_one(char** files, int files_cnt, char* output_dir, char* fix_filenam
 
   struct more_data * all = load_files(files, files_cnt);
 
-  int size = filter_end_s - filter_start_s + 1;
-  printf ("convert2b.so: %lu ~ %lu, size: %d second\n", filter_start_s,filter_end_s, size);
+  uint32_t size = filter_end_s - filter_start_s + 1;
+  printf ("convert2b.so: %lu ~ %lu, size: %u second\n", filter_start_s,filter_end_s, size);
   int i = 0;
   for(i = 0 ; i < 7; i ++) {
     int r = filter(all);
