@@ -1151,7 +1151,8 @@ int convert_one_32(char** files, int files_cnt, char* output_dir, char* fix_file
   struct more_data * all = load_files(files, files_cnt);
 
   uint32_t size = filter_end_s - filter_start_s + 1;
-  printf ("convert2b.so: %llu ~ %llu, size: %lu second\n", filter_start_s,filter_end_s, size);
+  //printf ("convert2b.so: %lu ~ %lu, size: %u second\n", filter_start_s,filter_end_s, size);
+  printf("convert2b.so: size %u second\n", size);
 
   int serr = load_shift_data();
   if (serr != 0) return serr;
