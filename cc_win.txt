@@ -1,0 +1,5 @@
+
+gcc -c convert2b.c
+ar rcs libconvert2b.a convert2b.o
+
+gcc -lm test_batch.c -I./source  libconvert2b.a  -o test_batch.exe
