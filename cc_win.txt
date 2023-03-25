@@ -1,5 +1,12 @@
 
 gcc -c convert2b.c
 ar rcs libconvert2b.a convert2b.o
+rm -f convert2b.o
+gcc -lm test.c -I./  libconvert2b.a  -o test.exe
+gcc -lm test_batch.c -I./source  source/libconvert2b.a  -o test_batch.exe
 
-gcc -lm test_batch.c -I./source  libconvert2b.a  -o test_batch.exe
+gcc -c convert2b32.c
+ar rcs libconvert2b.a convert2b32.o
+rm -f convert2b32.o
+gcc -lm test32.c -I./  libconvert2b.a  -o test32.exe
+gcc -lm test_batch32.c -I./source  source/libconvert2b.a  -o test_batch32.exe

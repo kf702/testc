@@ -9,5 +9,6 @@ struct Input_info {
 };
 
 int MoMAG_magdata_l2c(struct Input_info *input);
+int MoMAG_magdata_l2c_32(struct Input_info *input);
 
 #endif
