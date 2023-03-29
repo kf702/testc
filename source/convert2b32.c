@@ -1215,7 +1215,8 @@ int cmpfunc (const void * a, const void * b) {
   return -1;
 }
 
-void test_shift(char** shift_files, int shift_files_cnt) {
+void test_shift(char** shift_files, int shift_files_cnt, int hz) {
+  proccess_hz = hz;
   shift_sort_arr = malloc(sizeof(struct sort_t) * shift_files_cnt);
   memset(shift_sort_arr, 0, sizeof(struct sort_t)* shift_files_cnt);
   int i = 0;

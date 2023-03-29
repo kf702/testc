@@ -9,11 +9,11 @@
 #include <unistd.h>
 #include "convert2b.h"
 
-void test_shift(char** shift_files, int shift_files_cnt);
+void test_shift(char** shift_files, int shift_files_cnt, int hz);
 int MoMAG_magdata_l2c_32_test(struct Input_info *input);
 
-char* input_op_dir = "MOMGA2B-202111";
-char* config_dir = "guotaiOrbit";
+char* input_op_dir = "input_op_dir";
+char* config_dir = "config_dir";
 char* output_dir = "output_dir";
 
 int test(char* opfile) {
@@ -25,14 +25,14 @@ int test(char* opfile) {
   sprintf(info.outputpath, "%s", output_dir);
   int ret = MoMAG_magdata_l2c_32_test(&info);
   if (ret != 0) {
-    printf ("----------------------- MoMAG_magdata_l2c ret = %d\n", ret);
+    printf ("----------------------- MoMAG_magdata_l2c_32 ret = %d\n", ret);
   }
   return 0;
 }
 
 int main(int argc, char* argv[]) {
   if (argc != 4) {
-    printf ("Usage: test_batch <input_op_dir> <config_dir> <output_dir>\n");
+    printf ("Usage: test_batch32 <input_op_dir> <config_dir> <output_dir>\n");
     return 0;
   }
   input_op_dir = argv[1];
@@ -55,7 +55,7 @@ int main(int argc, char* argv[]) {
     }
   }
   printf ("total config files: %d\n", shift_files_cnt);
-  test_shift(shift_files, shift_files_cnt);
+  test_shift(shift_files, shift_files_cnt, 32);
 
 
   char opfilepath[512] = {0};

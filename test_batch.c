@@ -9,7 +9,7 @@
 #include <unistd.h>
 #include "convert2b.h"
 
-void test_shift(char** shift_files, int shift_files_cnt);
+void test_shift(char** shift_files, int shift_files_cnt, int hz);
 int MoMAG_magdata_l2c_test(struct Input_info *input);
 
 char* input_op_dir = "MOMGA2B-202111";
@@ -55,7 +55,7 @@ int main(int argc, char* argv[]) {
     }
   }
   printf ("total config files: %d\n", shift_files_cnt);
-  test_shift(shift_files, shift_files_cnt);
+  test_shift(shift_files, shift_files_cnt, 1);
 
 
   char opfilepath[512] = {0};

@@ -22,7 +22,7 @@ test_batch.c 是一个测试工具，可以批量对 op/ip + config 进行处理
   Usage: test_batch <input_op_dir> <config_dir> <output_dir>
 
   也就是运行这个批量工具，需要指定三个文件目录，分别是：
-  input_op_dir: 所有的 2B OP 文件所在的目录，注意，目录里面只能有 2B，2BL 文件，不要有其他类型文件
+  input_op_dir: 所有的 2B OP 文件所在的目录，注意，目录里面只能有 OP 2B，2BL 文件，不要有其他类型文件
   config_dir: 所有的 config 文件所在的目录，注意，目录里面不要有其他类型文件
   output_dir: 输出文件存放到此目录，这个目录要先手工新建好
 
