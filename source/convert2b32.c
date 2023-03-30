@@ -40,7 +40,7 @@ struct shift_one_data {
 struct shift_32_data {
   uint64_t sec;
   int data_len;
-  struct shift_one_data buf[33];
+  struct shift_one_data buf[35];
 };
 
 int proccess_hz = 1;
@@ -185,11 +185,18 @@ int parse_line(char* line, struct more_data * data) {
     if (i == 1) {
       one->time = string_to_ms(token);
       if (one->time == 0) return 1;
-      if (filter_start_s == 0) filter_start_s = one->time / 1000000;
-      filter_end_s = one->time / 1000000;
+      if (proccess_hz == 1) {
+        if (filter_start_s == 0) filter_start_s = one->time / 1000000;
+        filter_end_s = one->time / 1000000;
+      }
     } else if (i == 3) {
       int spl = atoi(token);
       if (spl != 1 && spl != 32 && spl != 128) return 1;
+      if (proccess_hz == 32) {
+        if (spl != 32) return 3;
+        if (filter_start_s == 0) filter_start_s = one->time / 1000000;
+        filter_end_s = one->time / 1000000;
+      }
       if (data->data_len == 0) {
         data->raw_sample = spl;
         data->now_sample = spl;
@@ -207,10 +214,10 @@ int parse_line(char* line, struct more_data * data) {
       one->bz = atof(token);
     } else if (i == 18) {
       if (0 != strncmp(token,"0x00", 4)) {
-	  char ttt[32] = {0};
-	  snprintf(ttt, 20, "%s", line);
-          printf("%s not end of 0x00\n", ttt);
-          return 3;
+	      char ttt[32] = {0};
+	      snprintf(ttt, 20, "%s", line);
+        printf("%s not end of 0x00\n", ttt);
+        return 3;
       }
     }
   }
@@ -287,7 +294,7 @@ int parse_shift_line_32(char* line, int last_got) {
       uint64_t ms = string_to_ms(token);
       uint64_t sec = ms / 1000000;
       if (sec == 0) {
-        printf ("parse_shift_line time error: %s\n", token);
+        printf ("parse_shift_line time error1: %s\n", token);
         return -1;
       }
       if (sec < filter_start_s) return 0;
@@ -295,11 +302,11 @@ int parse_shift_line_32(char* line, int last_got) {
 
       int index = sec - filter_start_s;
       one32 = shift_data32 + index;
-      if (one32->sec > 0 && last_got > 100) return 0;
+      //if (one32->sec > 0 && last_got > 4000) return 0;
       one32->sec = sec;
 
-      if (one32->data_len > 32) {
-        printf ("parse_shift_line time error: %s\n", token);
+      if (one32->data_len > 34) {
+        //printf ("parse_shift_line time error2: %s\n", token);
         return 0;
       }
 
@@ -449,15 +456,21 @@ int load_shift_data() {
 
   int start_i = -1;
   int end_i = -1;
+  uint64_t sort_start_time, sort_end_time;
   int i = 0;
   for(i = 0 ; i < shift_sort_arr_cnt ; i ++) {
     struct sort_t * one = shift_sort_arr + i;
-    //printf ("%s: %lu ~ %lu\n", one->filename, one->time, one->end_time);
-    if (one->time <= filter_start_s && one->end_time >= filter_start_s) {
+    sort_start_time = one->time;
+    sort_end_time = one->end_time;
+    if (proccess_hz == 32) {
+      sort_start_time = one->time / 1000000;
+      sort_end_time = one->end_time / 1000000;
+    }
+    if (sort_start_time <= filter_start_s && sort_end_time >= filter_start_s) {
       start_i = i;
       //printf ("load_shift_data from %s ", one->filename);
     }
-    if (one->time <= filter_end_s && one->end_time >= filter_end_s) {
+    if (sort_start_time <= filter_end_s && sort_end_time >= filter_end_s) {
       end_i = i;
       //printf ("~ %s\n", one->filename);
     }
@@ -492,6 +505,7 @@ int load_shift_data() {
   int last_got = 0;
   for(i = start_i ; i <= end_i ; i ++) {
     struct sort_t * one = shift_sort_arr + i;
+    //printf ("config %s\n", one->filename);
     last_got = load_one_shift_file(one->filename, last_got);
   }
   shift_data_len = size;
