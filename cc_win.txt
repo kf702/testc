@@ -6,9 +6,13 @@ gcc -lm test.c -I./  libconvert2b.a  -o test.exe
 mv -Force test.exe ../test2b/
 gcc -lm test_batch.c -I./source  source/libconvert2b.a  -o test_batch.exe
 
+
+cd source
+rm libconvert2b.a
 gcc -c convert2b32.c
 ar rcs libconvert2b.a convert2b32.o
 rm convert2b32.o
 gcc -lm test32.c -I./  libconvert2b.a  -o test32.exe
 mv -Force test32.exe ../test2b32/
+cd ..
 gcc -lm test_batch32.c -I./source  source/libconvert2b.a  -o test_batch32.exe

@@ -2,10 +2,10 @@
 test_batch.c 是一个测试工具，可以批量对 op/ip + config 进行处理。
 
 
-1. Linux 编译 test_batch (已经编译好了，可以不必重新编译)
+1. Linux 编译 test_batch 
 
   make lib
-  编译完成后，在 source-1221 里面会有一个库文件：libconvert2b.so
+  编译完成后，在 source 里面会有一个库文件：libconvert2b.so
   
   make 
   编译完成后，在当前目录里面会有一个可执行文件：test_batch.out

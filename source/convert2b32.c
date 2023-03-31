@@ -517,7 +517,7 @@ int load_shift_data() {
   int last_got = 0;
   for(i = start_i ; i <= end_i ; i ++) {
     struct sort_t * one = shift_sort_arr + i;
-    printf ("config %s\n", one->filename);
+    //printf ("config %s\n", one->filename);
     last_got = load_one_shift_file(one->filename, last_got);
   }
   shift_data_len = size;
