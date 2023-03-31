@@ -277,6 +277,14 @@ struct more_data * load_files(char **files, int cnt) {
   return first;
 }
 
+struct shift_one_data * find_shift_one(struct shift_32_data * shift_one32, uint64_t ms) {
+  int i = 0;
+  for(i = 0; i < shift_one32->data_len; i++) {
+    if (shift_one32->buf[i].time == ms) return (shift_one32->buf + i);
+  }
+  return NULL;
+}
+
 // -1 = error, 0 = ok, 1 = over
 int parse_shift_line_32(char* line, int last_got) {
   char mline[1000] = {0};
@@ -294,7 +302,7 @@ int parse_shift_line_32(char* line, int last_got) {
       uint64_t ms = string_to_ms(token);
       uint64_t sec = ms / 1000000;
       if (sec == 0) {
-        printf ("parse_shift_line time error1: %s\n", token);
+        printf ("parse_shift_line_32 time error1: %s\n", token);
         return -1;
       }
       if (sec < filter_start_s) return 0;
@@ -306,15 +314,17 @@ int parse_shift_line_32(char* line, int last_got) {
       one32->sec = sec;
 
       if (one32->data_len > 34) {
-        //printf ("parse_shift_line time error2: %s\n", token);
+        printf ("parse_shift_line_32 time error2: %s\n", token);
         return 0;
       }
 
-      one = one32->buf + one32->data_len;
-      one->time = ms;
-      one->flag = "00";
-      
-      one32->data_len ++;
+      //one = find_shift_one(one32, ms);
+      //if (one == NULL) {
+        one = one32->buf + one32->data_len;
+        one->time = ms;
+        one->flag = "00";
+        one32->data_len ++;
+      //}
     } else if (i == 3) {
       if (0 == strncmp(token,"NaN", 3)) {
         //printf ("parse_shift_line got NaN\n");
@@ -500,12 +510,14 @@ int load_shift_data() {
     shift_data32 = malloc(sizeof(struct shift_32_data) * size);
     if (shift_data32 == NULL) return 4;
     memset(shift_data32, 0, sizeof(struct shift_32_data) * size);
+
+    if (start_i > 0) end_i = start_i ;
   } 
   
   int last_got = 0;
   for(i = start_i ; i <= end_i ; i ++) {
     struct sort_t * one = shift_sort_arr + i;
-    //printf ("config %s\n", one->filename);
+    printf ("config %s\n", one->filename);
     last_got = load_one_shift_file(one->filename, last_got);
   }
   shift_data_len = size;
@@ -932,14 +944,6 @@ void by_config(struct more_data * first) {
     }
     next = next->next;
   }
-}
-
-struct shift_one_data * find_shift_one(struct shift_32_data * shift_one32, uint64_t ms) {
-  int i = 0;
-  for(i = 0; i < shift_one32->data_len; i++) {
-    if (shift_one32->buf[i].time == ms) return (shift_one32->buf + i);
-  }
-  return NULL;
 }
 
 void by_config_32(struct more_data * first) {
